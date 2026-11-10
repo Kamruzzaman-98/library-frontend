@@ -35,7 +35,7 @@ const handleLogout = async () => {
           <!-- Admin Links -->
           <RouterLink
             v-if="authStore.isAdmin"
-            to="/admin/settings"
+            to="/admin/settings-edit"
             class="text-slate-600 hover:text-emerald-600 text-sm font-medium"
           >
             সেটিংস এডিট
