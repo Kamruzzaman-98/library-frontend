@@ -5,6 +5,8 @@ import HomeView from '../views/HomeView.vue';
 import LoginView from '../views/LoginView.vue';
 import SettingsEditView from '../views/SettingsEditView.vue';
 
+import { useAuthStore } from '../stores/auth';
+
 const routes = [
     {
         path: '/',
@@ -12,10 +14,10 @@ const routes = [
         component: HomeView,
     },
     {
-        path: '/settings-edit',
+        path: '/admin/settings-edit',
         name: 'SettingsEdit',
         component: SettingsEditView,
-        // meta: { requiresAdmin: true },
+        meta: { requiresAdmin: true },
     },
     {
         path: '/login',
@@ -29,13 +31,14 @@ const router = createRouter({
     routes,
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to) => {
     const authStore = useAuthStore();
+
     if (to.meta.requiresAdmin && !authStore.isAdmin) {
-        next('/login');
-    } else {
-        next();
+        return '/login';
     }
+
+    return true;
 });
 
 export default router;
