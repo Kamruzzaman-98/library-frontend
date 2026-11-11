@@ -5,6 +5,7 @@ import CatalogView from "../views/CatalogView.vue";
 import LoginView from "../views/LoginView.vue";
 import RegisterView from "../views/RegisterView.vue";
 import AdminBooksView from "../views/AdminBooksView.vue";
+import AdminDashboardView from "../views/AdminDashboardView.vue";
 import MyBorrowsView from "../views/MyBorrowsView.vue";
 import AdminBorrowsView from "../views/AdminBorrowsView.vue";
 import AdminNoticesView from "../views/AdminNoticeView.vue";
@@ -35,7 +36,12 @@ const routes = [
     component: LoginView,
     meta: { guestOnly: true },
   },
-
+  {
+    path: "/admin/dashboard",
+    name: "admin-dashboard",
+    component: AdminDashboardView,
+    meta: { requiresAdmin: true },
+  },
   {
     path: "/admin/books",
     name: "admin-books",

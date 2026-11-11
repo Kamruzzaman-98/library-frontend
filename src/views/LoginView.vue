@@ -19,7 +19,7 @@ const handleLogin = async () => {
   if (result.success) {
     // অ্যাডমিন হলে সেটিংস এডিটে পাঠাবে, রিডার হলে হোমে
     if (authStore.isAdmin) {
-      router.push('/admin/settings');
+      router.push('/admin/dashboard');
     } else {
       router.push('/');
     }

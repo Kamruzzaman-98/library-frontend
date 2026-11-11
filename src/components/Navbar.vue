@@ -33,6 +33,14 @@ const handleLogout = async () => {
           >
 
           <RouterLink
+            v-if="authStore.isAdmin"
+            to="/admin/dashboard"
+            class="text-slate-600 hover:text-emerald-600 text-sm font-medium"
+          >
+            ড্যাশবোর্ড
+          </RouterLink>
+
+          <RouterLink
             to="/books"
             class="text-slate-600 hover:text-emerald-600 text-sm font-medium"
             >বইয়ের তালিকা</RouterLink
