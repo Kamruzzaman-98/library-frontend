@@ -67,7 +67,7 @@ const routes = [
     meta: { requiresAdmin: true },
   },
   {
-    path: "/admin/settings-edit",
+    path: "/admin/settings",
     name: "SettingsEdit",
     component: SettingsEditView,
     meta: { requiresAdmin: true },
