@@ -46,6 +46,19 @@ const handleLogout = async () => {
           >
             বই ম্যানেজমেন্ট
           </RouterLink>
+          <RouterLink
+            to="/my-borrows"
+            v-if="authStore.isAuthenticated && !authStore.isAdmin"
+            class="text-slate-600 hover:text-emerald-600 text-sm font-medium"
+            >আমার বইসমূহ</RouterLink
+          >
+
+          <RouterLink
+            to="/admin/borrows"
+            v-if="authStore.isAdmin"
+            class="text-slate-600 hover:text-emerald-600 text-sm font-medium"
+            >ইস্যু/জমা ডেস্ক</RouterLink
+          >
 
           <RouterLink
             v-if="authStore.isAdmin"

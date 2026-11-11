@@ -11,7 +11,7 @@ const fetchBorrows = async () => {
   try {
     const params = {};
     if (filterStatus.value) params.status = filterStatus.value;
-    const res = await apiClient.get("/admin/borrows", { params });
+    const res = await apiClient.get("/borrows", { params });
     borrows.value = res.data.data.data;
   } catch (error) {
     console.error("ইস্যু হিস্ট্রি এরর:", error);
