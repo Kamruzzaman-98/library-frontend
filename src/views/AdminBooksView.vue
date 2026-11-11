@@ -1,12 +1,14 @@
 <script setup>
 import { ref, reactive, onMounted } from "vue";
 import apiClient from "../api/axios";
+import { useToastStore } from "../stores/toast";
 
 const activeTab = ref("books"); // 'books' অথবা 'categories'
 const categories = ref([]);
 const books = ref([]);
 const loading = ref(false);
 const submitting = ref(false);
+const toast = useToastStore();
 
 // ক্যাটাগরি ফর্ম ডেটা
 const categoryForm = reactive({
@@ -58,12 +60,12 @@ const handleSaveCategory = async () => {
   submitting.value = true;
   try {
     const response = await apiClient.post("/categories", categoryForm);
-    alert(response.data.message);
+    toast.success(response.data.message);
     categoryForm.name = "";
     categoryForm.description = "";
     await fetchData();
   } catch (error) {
-    alert(error.response?.data?.message || "ক্যাটাগরি যুক্ত করা যায়নি!");
+    toast.error(error.response?.data?.message || "ক্যাটাগরি যুক্ত করা যায়নি!");
   } finally {
     submitting.value = false;
   }
@@ -79,10 +81,10 @@ const handleDeleteCategory = async (id) => {
     return;
   try {
     const res = await apiClient.delete(`/categories/${id}`);
-    alert(res.data.message);
+    toast.success(res.data.message);
     await fetchData();
   } catch (error) {
-    alert("ক্যাটাগরি ডিলিট ব্যর্থ হয়েছে!");
+    toast.error("ক্যাটাগরি ডিলিট ব্যর্থ হয়েছে!");
   }
 };
 
@@ -104,7 +106,7 @@ const handleSaveBook = async () => {
       },
     });
 
-    alert(response.data.message);
+    toast.success(response.data.message);
 
     // ফর্ম রিসেট
     Object.assign(bookForm, {
@@ -122,7 +124,7 @@ const handleSaveBook = async () => {
 
     await fetchData();
   } catch (error) {
-    alert(error.response?.data?.message || "বই যুক্ত করা সম্ভব হয়নি!");
+    toast.error(error.response?.data?.message || "বই যুক্ত করা সম্ভব হয়নি!");
   } finally {
     submitting.value = false;
   }
@@ -133,10 +135,10 @@ const handleDeleteBook = async (id) => {
   if (!confirm("আপনি কি নিশ্চিত এই বইটি তালিকা থেকে মুছে ফেলতে চান?")) return;
   try {
     const res = await apiClient.delete(`/books/${id}`);
-    alert(res.data.message);
+    toast.success(res.data.message);
     await fetchData();
   } catch (error) {
-    alert("বই ডিলিট ব্যর্থ হয়েছে!");
+    toast.error("বই ডিলিট ব্যর্থ হয়েছে!");
   }
 };
 </script>
