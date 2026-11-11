@@ -62,6 +62,14 @@ const handleLogout = async () => {
 
           <RouterLink
             v-if="authStore.isAdmin"
+            to="/admin/notices"
+            class="text-slate-600 hover:text-emerald-600 text-sm font-medium"
+          >
+            নোটিশ ম্যানেজমেন্ট
+          </RouterLink>
+
+          <RouterLink
+            v-if="authStore.isAdmin"
             to="/admin/settings-edit"
             class="text-slate-600 hover:text-emerald-600 text-sm font-medium"
           >

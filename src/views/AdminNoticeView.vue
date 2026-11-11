@@ -16,7 +16,7 @@ const form = reactive({
 const fetchNotices = async () => {
   loading.value = true;
   try {
-    const res = await apiClient.get("/notices");
+    const res = await apiClient.get("/manage/notices");
     notices.value = res.data.data.data;
   } catch (err) {
     console.error("নোটিশ লোড ব্যর্থ:", err);

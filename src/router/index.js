@@ -7,6 +7,7 @@ import RegisterView from "../views/RegisterView.vue";
 import AdminBooksView from "../views/AdminBooksView.vue";
 import MyBorrowsView from "../views/MyBorrowsView.vue";
 import AdminBorrowsView from "../views/AdminBorrowsView.vue";
+import AdminNoticesView from "../views/AdminNoticeView.vue";
 import SettingsEditView from "../views/SettingsEditView.vue";
 
 import { useAuthStore } from "../stores/auth";
@@ -51,6 +52,12 @@ const routes = [
     path: "/admin/borrows",
     name: "admin-borrows",
     component: AdminBorrowsView,
+    meta: { requiresAdmin: true },
+  },
+  {
+    path: "/admin/notices",
+    name: "admin-notices",
+    component: AdminNoticesView,
     meta: { requiresAdmin: true },
   },
   {
