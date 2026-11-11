@@ -1,12 +1,14 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import apiClient from "../api/axios";
+import { useToastStore } from "../stores/toast";
 
 const stats = ref(null);
 const members = ref([]);
 const memberSearch = ref("");
 const loadingStats = ref(false);
 const loadingMembers = ref(false);
+const toast = useToastStore();
 
 const fetchStats = async () => {
   loadingStats.value = true;
@@ -40,10 +42,10 @@ const handleToggleStatus = async (user) => {
 
   try {
     const res = await apiClient.post(`/admin/members/toggle-status/${user.id}`);
-    alert(res.data.message);
+    toast.success(res.data.message);
     await fetchMembers();
   } catch (err) {
-    alert(err.response?.data?.message || "স্ট্যাটাস পরিবর্তন করা যায়নি!");
+    toast.error(err.response?.data?.message || "স্ট্যাটাস পরিবর্তন করা যায়নি!");
   }
 };
 
