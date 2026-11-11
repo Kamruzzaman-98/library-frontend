@@ -4,6 +4,7 @@ import HomeView from "../views/HomeView.vue";
 import CatalogView from "../views/CatalogView.vue";
 import LoginView from "../views/LoginView.vue";
 import RegisterView from "../views/RegisterView.vue";
+import AdminBooksView from "../views/AdminBooksView.vue";
 import SettingsEditView from "../views/SettingsEditView.vue";
 
 import { useAuthStore } from "../stores/auth";
@@ -30,6 +31,12 @@ const routes = [
     name: "register",
     component: RegisterView,
     meta: { guestOnly: true },
+  },
+  {
+    path: "/admin/books",
+    name: "admin-books",
+    component: AdminBooksView,
+    meta: { requiresAdmin: true },
   },
   {
     path: "/admin/settings-edit",
