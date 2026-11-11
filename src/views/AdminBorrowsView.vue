@@ -26,7 +26,7 @@ onMounted(() => {
 
 const handleIssue = async (id) => {
   try {
-    const res = await apiClient.post(`/admin/borrows/${id}/issue`, {
+    const res = await apiClient.post(`/borrows/issue/${id}`, {
       days: 14,
     });
     alert(res.data.message);
@@ -39,7 +39,7 @@ const handleIssue = async (id) => {
 const handleReturn = async (id) => {
   if (!confirm("বইটি কি অক্ষত অবস্থায় ফেরত পাওয়া গেছে?")) return;
   try {
-    const res = await apiClient.post(`/admin/borrows/${id}/return`);
+    const res = await apiClient.post(`/borrows/return/${id}`);
     alert(res.data.message);
     await fetchBorrows();
   } catch (error) {
@@ -50,7 +50,7 @@ const handleReturn = async (id) => {
 const handleReject = async (id) => {
   if (!confirm("আপনি কি এই আবেদনটি বাতিল করতে চান?")) return;
   try {
-    const res = await apiClient.post(`/admin/borrows/${id}/reject`);
+    const res = await apiClient.post(`/borrows/reject/${id}`);
     alert(res.data.message);
     await fetchBorrows();
   } catch (error) {
