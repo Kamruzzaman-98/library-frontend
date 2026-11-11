@@ -1,12 +1,15 @@
 <script setup>
 import { ref, onMounted, watch } from "vue";
 import apiClient from "../api/axios";
+import { useAuthStore } from "../stores/auth";
 
 const books = ref([]);
 const categories = ref([]);
 const search = ref("");
 const selectedCategory = ref("");
 const loading = ref(false);
+const authStore = useAuthStore();
+const requestingBookId = ref(null);
 
 const fetchCategories = async () => {
   try {
@@ -30,6 +33,23 @@ const fetchBooks = async () => {
     console.error("বই লোড এরর:", err);
   } finally {
     loading.value = false;
+  }
+};
+
+const handleRequestBook = async (bookId) => {
+  if (!authStore.isAuthenticated) {
+    alert("বইয়ের জন্য আবেদন করতে প্রথমে লগইন করুন।");
+    return;
+  }
+
+  requestingBookId.value = bookId;
+  try {
+    const res = await apiClient.post("/borrow-request", { book_id: bookId });
+    alert(res.data.message);
+  } catch (error) {
+    alert(error.response?.data?.message || "আবেদন সম্পন্ন করা যায়নি!");
+  } finally {
+    requestingBookId.value = null;
   }
 };
 
@@ -141,6 +161,27 @@ onMounted(() => {
             }}
           </span>
           <span class="text-slate-400">মোট কপি: {{ book.total_copies }}</span>
+        </div>
+        <div class="p-3 bg-white border-t border-slate-100">
+          <button
+            v-if="book.available_copies > 0"
+            @click="handleRequestBook(book.id)"
+            :disabled="requestingBookId === book.id"
+            class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-1.5 rounded-lg text-xs transition"
+          >
+            {{
+              requestingBookId === book.id
+                ? "আবেদন হচ্ছে..."
+                : "পড়ার আবেদন করুন"
+            }}
+          </button>
+          <button
+            v-else
+            disabled
+            class="w-full bg-slate-200 text-slate-400 font-medium py-1.5 rounded-lg text-xs cursor-not-allowed"
+          >
+            বর্তমানে উপলব্ধ নেই
+          </button>
         </div>
       </div>
     </div>
