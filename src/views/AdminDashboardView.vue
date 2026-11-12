@@ -1,14 +1,35 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import apiClient from "../api/axios";
 import { useToastStore } from "../stores/toast";
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  ArcElement,
+} from "chart.js";
+import { Bar, Doughnut } from "vue-chartjs";
 
+ChartJS.register(
+  Title,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  ArcElement,
+);
+
+const toast = useToastStore();
 const stats = ref(null);
 const members = ref([]);
 const memberSearch = ref("");
 const loadingStats = ref(false);
 const loadingMembers = ref(false);
-const toast = useToastStore();
 
 const fetchStats = async () => {
   loadingStats.value = true;
@@ -41,12 +62,54 @@ const handleToggleStatus = async (user) => {
   if (!confirm(`আপনি কি এই পাঠককে ${actionText} করতে চান?`)) return;
 
   try {
-    const res = await apiClient.post(`/admin/members/toggle-status/${user.id}`);
+    const res = await apiClient.post(`/admin/members/${user.id}/toggle-status`);
     toast.success(res.data.message);
     await fetchMembers();
   } catch (err) {
     toast.error(err.response?.data?.message || "স্ট্যাটাস পরিবর্তন করা যায়নি!");
   }
+};
+
+// Bar Chart ডেটা (মাসিক বই বিতরণ)
+const barChartData = computed(() => {
+  if (!stats.value?.monthly_borrows) return { labels: [], datasets: [] };
+  return {
+    labels: stats.value.monthly_borrows.map((m) => m.month),
+    datasets: [
+      {
+        label: "মাসিক বই আবেদন/বিতরণ",
+        backgroundColor: "#059669",
+        borderRadius: 6,
+        data: stats.value.monthly_borrows.map((m) => m.count),
+      },
+    ],
+  };
+});
+
+// Doughnut Chart ডেটা (ক্যাটাগরি অনুযায়ী বই)
+const doughnutChartData = computed(() => {
+  if (!stats.value?.category_stats) return { labels: [], datasets: [] };
+  return {
+    labels: stats.value.category_stats.map((c) => c.name),
+    datasets: [
+      {
+        backgroundColor: [
+          "#059669",
+          "#0284c7",
+          "#d97706",
+          "#7c3aed",
+          "#e11d48",
+          "#475569",
+        ],
+        data: stats.value.category_stats.map((c) => c.books_count),
+      },
+    ],
+  };
+});
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
 };
 
 onMounted(() => {
@@ -56,123 +119,162 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto px-4 py-8 space-y-8">
-    <div class="flex justify-between items-center border-b pb-4">
+  <div class="space-y-8">
+    <!-- Top Header -->
+    <div
+      class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-200 pb-4"
+    >
       <div>
         <h1 class="text-2xl font-bold text-slate-800">
           পাঠাগার প্রশাসন ড্যাশবোর্ড
         </h1>
         <p class="text-sm text-slate-500">
-          সার্বিক পরিসংখ্যান ও মেম্বার ব্যবস্থাপনা
+          সার্বিক পরিসংখ্যান, জরিমানা সতর্কতা ও মেম্বার ব্যবস্থাপনা
         </p>
       </div>
-      <div class="flex space-x-2">
-        <RouterLink
-          to="/admin/borrows"
-          class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition"
-        >
-          বই বিতরণ ডেস্ক
-        </RouterLink>
-      </div>
+      <RouterLink
+        to="/admin/borrows"
+        class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition text-center"
+      >
+        বই বিতরণ ডেস্ক &rarr;
+      </RouterLink>
     </div>
 
-    <!-- Analytics Cards -->
-    <div v-if="loadingStats" class="text-center py-6 text-slate-400">
+    <!-- Analytics Summary Cards -->
+    <div v-if="loadingStats" class="text-center py-8 text-slate-400">
       পরিসংখ্যান লোড হচ্ছে...
     </div>
-    <div v-else-if="stats" class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-        <span
-          class="text-xs font-semibold text-slate-400 uppercase tracking-wider"
-          >মোট বইয়ের পদ</span
-        >
-        <div class="text-2xl font-bold text-slate-800 mt-1">
-          {{ stats.counts.book_titles }} টি
-        </div>
-        <span class="text-xs text-slate-500"
-          >মোট কপি: {{ stats.counts.total_copies }} টি</span
-        >
-      </div>
-
-      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-        <span
-          class="text-xs font-semibold text-emerald-600 uppercase tracking-wider"
-          >মজুদ কপি</span
-        >
-        <div class="text-2xl font-bold text-emerald-700 mt-1">
-          {{ stats.counts.available_copies }} টি
-        </div>
-        <span class="text-xs text-slate-500"
-          >পড়ছেন: {{ stats.counts.borrowed_copies }} টি</span
-        >
-      </div>
-
-      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-        <span
-          class="text-xs font-semibold text-amber-600 uppercase tracking-wider"
-          >অপেক্ষমান আবেদন</span
-        >
-        <div class="text-2xl font-bold text-amber-600 mt-1">
-          {{ stats.counts.pending_requests }} টি
-        </div>
-        <RouterLink
-          to="/admin/borrows"
-          class="text-xs text-emerald-600 hover:underline"
-          >অনুমোদন দিন &rarr;</RouterLink
-        >
-      </div>
-
-      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-        <span
-          class="text-xs font-semibold text-blue-600 uppercase tracking-wider"
-          >নিবন্ধিত পাঠক</span
-        >
-        <div class="text-2xl font-bold text-blue-700 mt-1">
-          {{ stats.counts.total_readers }} জন
-        </div>
-        <span class="text-xs text-slate-500"
-          >মোট সম্পন্ন ঋণ: {{ stats.counts.total_returned }}</span
-        >
-      </div>
-    </div>
-
-    <!-- Recent Activities & Action Shortcut -->
-    <div
-      v-if="stats && stats.recent_activities.length > 0"
-      class="bg-white p-6 rounded-xl border border-slate-200 shadow-xs"
-    >
-      <h2 class="text-base font-bold text-slate-800 mb-4">
-        সাম্প্রতিক আদান-প্রদান কার্যক্রম
-      </h2>
-      <div class="divide-y divide-slate-100">
-        <div
-          v-for="act in stats.recent_activities"
-          :key="act.id"
-          class="py-2.5 flex justify-between items-center text-sm"
-        >
-          <div>
-            <span class="font-semibold text-slate-800">{{
-              act.user?.name
-            }}</span>
-            <span class="text-slate-500"> — {{ act.book?.title }}</span>
-          </div>
-          <span
-            :class="{
-              'bg-amber-100 text-amber-800': act.status === 'pending',
-              'bg-blue-100 text-blue-800': act.status === 'issued',
-              'bg-emerald-100 text-emerald-800': act.status === 'returned',
-              'bg-red-100 text-red-800': act.status === 'rejected',
-            }"
-            class="px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider"
+    <template v-else-if="stats">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs">
+          <span class="text-xs font-semibold text-slate-400 uppercase"
+            >মোট বইয়ের পদ</span
           >
-            {{ act.status }}
+          <div class="text-2xl font-bold text-slate-800 mt-1">
+            {{ stats.counts.book_titles }} টি
+          </div>
+          <span class="text-xs text-slate-500"
+            >মোট কপি: {{ stats.counts.total_copies }} টি</span
+          >
+        </div>
+
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs">
+          <span class="text-xs font-semibold text-emerald-600 uppercase"
+            >শেলফে মজুদ</span
+          >
+          <div class="text-2xl font-bold text-emerald-700 mt-1">
+            {{ stats.counts.available_copies }} টি
+          </div>
+          <span class="text-xs text-slate-500"
+            >পাঠকের কাছে: {{ stats.counts.borrowed_copies }} টি</span
+          >
+        </div>
+
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs">
+          <span class="text-xs font-semibold text-amber-600 uppercase"
+            >অপেক্ষমান আবেদন</span
+          >
+          <div class="text-2xl font-bold text-amber-600 mt-1">
+            {{ stats.counts.pending_requests }} টি
+          </div>
+          <RouterLink
+            to="/admin/borrows"
+            class="text-xs text-emerald-600 hover:underline"
+            >অনুমোদন দিন &rarr;</RouterLink
+          >
+        </div>
+
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs">
+          <span class="text-xs font-semibold text-red-600 uppercase"
+            >মেয়াদোত্তীর্ণ (Overdue)</span
+          >
+          <div class="text-2xl font-bold text-red-600 mt-1">
+            {{ stats.counts.overdue_count }} টি
+          </div>
+          <span class="text-xs text-slate-500"
+            >নিবন্ধিত পাঠক: {{ stats.counts.total_readers }} জন</span
+          >
+        </div>
+      </div>
+
+      <!-- Visual Analytics Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div
+          class="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-2xs"
+        >
+          <h2 class="text-base font-bold text-slate-800 mb-4">
+            মাসিক বই আদান-প্রদান পরিসংখ্যান
+          </h2>
+          <div class="h-64">
+            <Bar :data="barChartData" :options="chartOptions" />
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-2xs">
+          <h2 class="text-base font-bold text-slate-800 mb-4">
+            ক্যাটাগরি ভিত্তিক বই
+          </h2>
+          <div class="h-64">
+            <Doughnut :data="doughnutChartData" :options="chartOptions" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Automated Overdue & Fine Alerts Section -->
+      <div
+        v-if="stats.overdue_records.length > 0"
+        class="bg-red-50 border border-red-200 rounded-xl p-6"
+      >
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-bold text-red-800">
+            মেয়াদোত্তীর্ণ বই ও বকেয়া জরিমানার তালিকা (দিনপ্রতি ৫৳)
+          </h2>
+          <span
+            class="text-xs bg-red-600 text-white px-2.5 py-1 rounded-full font-semibold"
+          >
+            {{ stats.overdue_records.length }} জন বকেয়া
           </span>
         </div>
+        <div class="overflow-x-auto bg-white rounded-lg border border-red-100">
+          <table class="w-full text-left text-sm text-slate-600">
+            <thead class="bg-red-100/60 text-red-900 text-xs uppercase">
+              <tr>
+                <th class="py-2.5 px-4">পাঠক ও ফোন</th>
+                <th class="py-2.5 px-4">বইয়ের নাম</th>
+                <th class="py-2.5 px-4">ডিউ ডেট</th>
+                <th class="py-2.5 px-4">বিলম্ব</th>
+                <th class="py-2.5 px-4 text-right">মোট জরিমানা</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-red-50">
+              <tr v-for="item in stats.overdue_records" :key="item.id">
+                <td class="py-2.5 px-4">
+                  <div class="font-semibold text-slate-800">
+                    {{ item.user?.name }}
+                  </div>
+                  <div class="text-xs font-mono text-slate-500">
+                    {{ item.user?.phone }}
+                  </div>
+                </td>
+                <td class="py-2.5 px-4 font-medium">{{ item.book?.title }}</td>
+                <td class="py-2.5 px-4 font-mono text-xs text-red-600">
+                  {{ item.due_date }}
+                </td>
+                <td class="py-2.5 px-4 text-red-600 font-semibold">
+                  {{ item.overdue_days }} দিন
+                </td>
+                <td class="py-2.5 px-4 text-right font-bold text-red-700">
+                  {{ item.fine_amount }} ৳
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </template>
 
-    <!-- Member Management Section -->
-    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-xs">
+    <!-- Member Management Table -->
+    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-2xs">
       <div
         class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6"
       >
@@ -184,15 +286,13 @@ onMounted(() => {
             পাঠকদের তথ্য ও অ্যাকাউন্ট নিয়ন্ত্রণ
           </p>
         </div>
-        <div class="flex gap-2">
-          <input
-            v-model="memberSearch"
-            @input="fetchMembers"
-            type="text"
-            placeholder="নাম বা মোবাইল দিয়ে খুঁজুন..."
-            class="border rounded-lg px-3 py-1.5 text-sm bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
-          />
-        </div>
+        <input
+          v-model="memberSearch"
+          @input="fetchMembers"
+          type="text"
+          placeholder="নাম বা মোবাইল দিয়ে খুঁজুন..."
+          class="border rounded-lg px-3 py-1.5 text-sm bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
+        />
       </div>
 
       <div class="overflow-x-auto">
@@ -201,7 +301,7 @@ onMounted(() => {
             <tr>
               <th class="py-3 px-4">নাম</th>
               <th class="py-3 px-4">মোবাইল ও ঠিকানা</th>
-              <th class="py-3 px-4">বই আবেদন সংখ্যা</th>
+              <th class="py-3 px-4">বই গ্রহণ</th>
               <th class="py-3 px-4">অবস্থা</th>
               <th class="py-3 px-4 text-right">অ্যাকশন</th>
             </tr>
@@ -249,11 +349,6 @@ onMounted(() => {
                 >
                   {{ member.status === "active" ? "ব্লক করুন" : "আনব্লক করুন" }}
                 </button>
-              </td>
-            </tr>
-            <tr v-if="members.length === 0">
-              <td colspan="5" class="text-center py-6 text-slate-400">
-                কোনো পাঠক পাওয়া যায়নি।
               </td>
             </tr>
           </tbody>
