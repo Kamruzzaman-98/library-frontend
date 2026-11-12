@@ -1,96 +1,77 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { useAuthStore } from "../stores/auth";
 
+// Layouts
+import PublicLayout from "../layouts/PublicLayout.vue";
+import AdminLayout from "../layouts/AdminLayout.vue";
+
+// Public & Reader Views
 import HomeView from "../views/HomeView.vue";
 import CatalogView from "../views/CatalogView.vue";
 import LoginView from "../views/LoginView.vue";
 import RegisterView from "../views/RegisterView.vue";
-import AdminBooksView from "../views/AdminBooksView.vue";
-import AdminDashboardView from "../views/AdminDashboardView.vue";
 import MyBorrowsView from "../views/MyBorrowsView.vue";
+
+// Admin Views
+import AdminDashboardView from "../views/AdminDashboardView.vue";
+import AdminBooksView from "../views/AdminBooksView.vue";
 import AdminBorrowsView from "../views/AdminBorrowsView.vue";
 import AdminNoticesView from "../views/AdminNoticeView.vue";
 import SettingsEditView from "../views/SettingsEditView.vue";
 
-import { useAuthStore } from "../stores/auth";
-
 const routes = [
+  // ১. পাবলিক ও সাধারণ পাঠক লেআউট
   {
     path: "/",
-    name: "Home",
-    component: HomeView,
+    component: PublicLayout,
+    children: [
+      { path: "", name: "home", component: HomeView },
+      { path: "books", name: "catalog", component: CatalogView },
+      { path: "login", name: "login", component: LoginView },
+      { path: "register", name: "register", component: RegisterView },
+      {
+        path: "my-borrows",
+        name: "my-borrows",
+        component: MyBorrowsView,
+        meta: { requiresAuth: true },
+      },
+    ],
   },
+
   {
-    path: "/books",
-    name: "catalog",
-    component: CatalogView,
-  },
-  {
-    path: "/register",
-    name: "register",
-    component: RegisterView,
-    meta: { guestOnly: true },
-  },
-  {
-    path: "/login",
-    name: "login",
-    component: LoginView,
-    meta: { guestOnly: true },
-  },
-  {
-    path: "/admin/dashboard",
-    name: "admin-dashboard",
-    component: AdminDashboardView,
+    path: "/admin",
+    component: AdminLayout,
     meta: { requiresAdmin: true },
-  },
-  {
-    path: "/admin/books",
-    name: "admin-books",
-    component: AdminBooksView,
-    meta: { requiresAdmin: true },
-  },
-  {
-    path: "/my-borrows",
-    name: "my-borrows",
-    component: MyBorrowsView,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: "/admin/borrows",
-    name: "admin-borrows",
-    component: AdminBorrowsView,
-    meta: { requiresAdmin: true },
-  },
-  {
-    path: "/admin/notices",
-    name: "admin-notices",
-    component: AdminNoticesView,
-    meta: { requiresAdmin: true },
-  },
-  {
-    path: "/admin/settings",
-    name: "SettingsEdit",
-    component: SettingsEditView,
-    meta: { requiresAdmin: true },
+    redirect: "/admin/dashboard",
+    children: [
+      {
+        path: "dashboard",
+        name: "admin-dashboard",
+        component: AdminDashboardView,
+      },
+      { path: "books", name: "admin-books", component: AdminBooksView },
+      { path: "borrows", name: "admin-borrows", component: AdminBorrowsView },
+      { path: "notices", name: "admin-notices", component: AdminNoticesView },
+      { path: "settings", name: "settings-edit", component: SettingsEditView },
+    ],
   },
 ];
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes,
 });
 
-router.beforeEach((to) => {
+router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
 
   if (to.meta.requiresAdmin && !authStore.isAdmin) {
-    return "/login";
+    next("/login");
+  } else if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    next("/login");
+  } else {
+    next();
   }
-
-  if (to.meta.guestOnly && authStore.isAuthenticated) {
-    return "/";
-  }
-
-  return true;
 });
 
 export default router;

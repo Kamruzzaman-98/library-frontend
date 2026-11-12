@@ -21,7 +21,7 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <nav class="bg-white border-b border-slate-200 sticky top-0 z-40">
+  <nav class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between h-16 items-center">
         <!-- Logo -->
@@ -31,14 +31,14 @@ const handleLogout = async () => {
           class="flex items-center space-x-2"
         >
           <span
-            class="text-lg sm:text-xl font-bold text-emerald-700 truncate max-w-[200px] sm:max-w-none"
+            class="text-lg sm:text-xl font-bold text-emerald-700 truncate max-w-[220px] sm:max-w-none"
           >
             {{ settingStore.settings.library_name || "পাঠাগার" }}
           </span>
         </RouterLink>
 
         <!-- Desktop Menu -->
-        <div class="hidden md:flex items-center space-x-4">
+        <div class="hidden md:flex items-center space-x-5">
           <RouterLink
             to="/"
             class="text-slate-600 hover:text-emerald-600 text-sm font-medium"
@@ -50,35 +50,6 @@ const handleLogout = async () => {
             >বইয়ের তালিকা</RouterLink
           >
 
-          <!-- Admin Links -->
-          <template v-if="authStore.isAdmin">
-            <RouterLink
-              to="/admin/dashboard"
-              class="text-slate-600 hover:text-emerald-600 text-sm font-medium"
-              >ড্যাশবোর্ড</RouterLink
-            >
-            <RouterLink
-              to="/admin/books"
-              class="text-slate-600 hover:text-emerald-600 text-sm font-medium"
-              >বই ম্যানেজমেন্ট</RouterLink
-            >
-            <RouterLink
-              to="/admin/borrows"
-              class="text-slate-600 hover:text-emerald-600 text-sm font-medium"
-              >বিতরণ ডেস্ক</RouterLink
-            >
-            <RouterLink
-              to="/admin/notices"
-              class="text-slate-600 hover:text-emerald-600 text-sm font-medium"
-              >নোটিশ</RouterLink
-            >
-            <RouterLink
-              to="/admin/settings"
-              class="text-slate-600 hover:text-emerald-600 text-sm font-medium"
-              >সেটিংস</RouterLink
-            >
-          </template>
-
           <!-- Reader Link -->
           <RouterLink
             v-if="authStore.isAuthenticated && !authStore.isAdmin"
@@ -86,6 +57,15 @@ const handleLogout = async () => {
             class="text-slate-600 hover:text-emerald-600 text-sm font-medium"
           >
             আমার বইসমূহ
+          </RouterLink>
+
+          <!-- Admin Shortcut Button -->
+          <RouterLink
+            v-if="authStore.isAdmin"
+            to="/admin/dashboard"
+            class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition"
+          >
+            অ্যাডমিন প্যানেল &rarr;
           </RouterLink>
 
           <!-- Auth Section -->
@@ -168,39 +148,6 @@ const handleLogout = async () => {
         >বইয়ের তালিকা</RouterLink
       >
 
-      <template v-if="authStore.isAdmin">
-        <RouterLink
-          to="/admin/dashboard"
-          @click="closeMenu"
-          class="block text-emerald-700 font-semibold py-1"
-          >ড্যাশবোর্ড</RouterLink
-        >
-        <RouterLink
-          to="/admin/books"
-          @click="closeMenu"
-          class="block text-slate-700 font-medium py-1"
-          >বই ম্যানেজমেন্ট</RouterLink
-        >
-        <RouterLink
-          to="/admin/borrows"
-          @click="closeMenu"
-          class="block text-slate-700 font-medium py-1"
-          >বিতরণ ডেস্ক</RouterLink
-        >
-        <RouterLink
-          to="/admin/notices"
-          @click="closeMenu"
-          class="block text-slate-700 font-medium py-1"
-          >নোটিশ ম্যানেজমেন্ট</RouterLink
-        >
-        <RouterLink
-          to="/admin/settings-edit"
-          @click="closeMenu"
-          class="block text-slate-700 font-medium py-1"
-          >সেটিংস এডিট</RouterLink
-        >
-      </template>
-
       <RouterLink
         v-if="authStore.isAuthenticated && !authStore.isAdmin"
         to="/my-borrows"
@@ -208,6 +155,15 @@ const handleLogout = async () => {
         class="block text-slate-700 font-medium py-2"
       >
         আমার বইসমূহ
+      </RouterLink>
+
+      <RouterLink
+        v-if="authStore.isAdmin"
+        to="/admin/dashboard"
+        @click="closeMenu"
+        class="block text-center bg-slate-900 text-white font-semibold py-2 rounded-lg text-sm"
+      >
+        অ্যাডমিন প্যানেল &rarr;
       </RouterLink>
 
       <div class="pt-3 border-t border-slate-100 flex flex-col space-y-2">
