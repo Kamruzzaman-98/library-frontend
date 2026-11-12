@@ -3,12 +3,16 @@ import { ref, reactive, onMounted } from "vue";
 import apiClient from "../api/axios";
 import { useToastStore } from "../stores/toast";
 
-const activeTab = ref("books"); // 'books' অথবা 'categories'
+const activeTab = ref("books");
 const categories = ref([]);
 const books = ref([]);
 const loading = ref(false);
 const submitting = ref(false);
 const toast = useToastStore();
+
+const isEditModalOpen = ref(false);
+const editingBookId = ref(null);
+const editCoverFile = ref(null);
 
 // ক্যাটাগরি ফর্ম ডেটা
 const categoryForm = reactive({
@@ -71,7 +75,6 @@ const handleSaveCategory = async () => {
   }
 };
 
-// ক্যাটাগরি ডিলিট
 const handleDeleteCategory = async (id) => {
   if (
     !confirm(
@@ -88,7 +91,6 @@ const handleDeleteCategory = async (id) => {
   }
 };
 
-// বই সেভ হ্যান্ডলার (Multipart Form Data)
 const handleSaveBook = async () => {
   submitting.value = true;
   try {
@@ -139,6 +141,60 @@ const handleDeleteBook = async (id) => {
     await fetchData();
   } catch (error) {
     toast.error("বই ডিলিট ব্যর্থ হয়েছে!");
+  }
+};
+
+const editForm = reactive({
+  category_id: "",
+  title: "",
+  author: "",
+  publisher: "",
+  total_copies: 1,
+  shelf_no: "",
+  description: "",
+});
+
+const openEditModal = (book) => {
+  editingBookId.value = book.id;
+  Object.assign(editForm, {
+    category_id: book.category_id,
+    title: book.title,
+    author: book.author,
+    publisher: book.publisher || "",
+    total_copies: book.total_copies,
+    shelf_no: book.shelf_no || "",
+    description: book.description || "",
+  });
+  editCoverFile.value = null;
+  isEditModalOpen.value = true;
+};
+
+const handleUpdateBook = async () => {
+  submitting.value = true;
+  try {
+    const formData = new FormData();
+    Object.keys(editForm).forEach((key) => {
+      formData.append(key, editForm[key]);
+    });
+    if (editCoverFile.value) {
+      formData.append("cover_image", editCoverFile.value);
+    }
+
+    const res = await apiClient.post(
+      `/books/${editingBookId.value}`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    );
+
+    toast.success(res.data.message);
+    isEditModalOpen.value = false;
+    await fetchData();
+  } catch (err) {
+    toast.error(err.response?.data?.message || "বই আপডেট ব্যর্থ হয়েছে!");
+  } finally {
+    submitting.value = false;
   }
 };
 </script>
@@ -432,7 +488,13 @@ const handleDeleteBook = async (id) => {
                 <td class="py-3 px-4 font-mono text-xs">
                   {{ book.shelf_no || "N/A" }}
                 </td>
-                <td class="py-3 px-4 text-right">
+                <td class="py-3 px-4 text-right space-x-3">
+                  <button
+                    @click="openEditModal(book)"
+                    class="text-blue-600 hover:text-blue-800 font-semibold"
+                  >
+                    এডিট
+                  </button>
                   <button
                     @click="handleDeleteBook(book.id)"
                     class="text-red-500 hover:text-red-700 font-semibold"
@@ -449,6 +511,140 @@ const handleDeleteBook = async (id) => {
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+    <!-- Book Edit Modal -->
+    <div
+      v-if="isEditModalOpen"
+      style="
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.6);
+        z-index: 60;
+      "
+      class="flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
+      >
+        <div class="flex justify-between items-center border-b pb-3">
+          <h3 class="text-lg font-bold text-slate-800">
+            বইয়ের তথ্য আপডেট করুন
+          </h3>
+          <button
+            @click="isEditModalOpen = false"
+            class="text-slate-400 hover:text-slate-600 text-xl font-bold"
+          >
+            &times;
+          </button>
+        </div>
+
+        <form @submit.prevent="handleUpdateBook" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700"
+              >ক্যাটাগরি *</label
+            >
+            <select
+              v-model="editForm.category_id"
+              required
+              class="mt-1 w-full border rounded-lg p-2 text-sm bg-white"
+            >
+              <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                {{ cat.name }}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700"
+              >বইয়ের শিরোনাম *</label
+            >
+            <input
+              v-model="editForm.title"
+              type="text"
+              required
+              class="mt-1 w-full border rounded-lg p-2 text-sm"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700"
+                >লেখক *</label
+              >
+              <input
+                v-model="editForm.author"
+                type="text"
+                required
+                class="mt-1 w-full border rounded-lg p-2 text-sm"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700"
+                >প্রকাশক</label
+              >
+              <input
+                v-model="editForm.publisher"
+                type="text"
+                class="mt-1 w-full border rounded-lg p-2 text-sm"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700"
+                >মোট কপি *</label
+              >
+              <input
+                v-model="editForm.total_copies"
+                type="number"
+                min="1"
+                required
+                class="mt-1 w-full border rounded-lg p-2 text-sm"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700"
+                >শেলফ নম্বর</label
+              >
+              <input
+                v-model="editForm.shelf_no"
+                type="text"
+                class="mt-1 w-full border rounded-lg p-2 text-sm"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700"
+              >নতুন কভার ইমেজ (পরিবর্তন করতে চাইলে)</label
+            >
+            <input
+              type="file"
+              accept="image/*"
+              @change="(e) => (editCoverFile = e.target.files[0])"
+              class="mt-1 w-full text-xs text-slate-500"
+            />
+          </div>
+
+          <div class="flex justify-end space-x-2 pt-3 border-t">
+            <button
+              type="button"
+              @click="isEditModalOpen = false"
+              class="px-4 py-2 text-sm text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200"
+            >
+              বাতিল
+            </button>
+            <button
+              type="submit"
+              :disabled="submitting"
+              class="px-5 py-2 text-sm text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 font-semibold"
+            >
+              {{ submitting ? "আপডেট হচ্ছে..." : "পরিবর্তন সেভ করুন" }}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
