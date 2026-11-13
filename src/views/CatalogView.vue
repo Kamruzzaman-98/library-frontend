@@ -3,6 +3,11 @@ import { ref, onMounted, watch } from "vue";
 import apiClient from "../api/axios";
 import { useAuthStore } from "../stores/auth";
 
+//For image
+const storageUrl =
+  import.meta.env.VITE_STORAGE_BASE_URL ||
+  "[http://127.0.0.1:8000](http://127.0.0.1:8000)";
+
 const books = ref([]);
 const categories = ref([]);
 const search = ref("");
@@ -122,7 +127,7 @@ onMounted(() => {
         >
           <img
             v-if="book.cover_image"
-            :src="'http://127.0.0.1:8000' + book.cover_image"
+            :src="storageUrl + book.cover_image"
             :alt="book.title"
             class="h-full w-full object-cover"
           />
