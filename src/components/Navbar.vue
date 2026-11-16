@@ -1,13 +1,44 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
+import { Bell } from "lucide-vue-next";
 import { useAuthStore } from "../stores/auth";
 import { useSettingStore } from "../stores/setting";
+import apiClient from "../api/axios";
 
 const router = useRouter();
 const authStore = useAuthStore();
 const settingStore = useSettingStore();
+
 const isMobileMenuOpen = ref(false);
+const notifiedBooks = ref([]);
+
+const fetchUserNotifications = async () => {
+  if (!authStore.isAuthenticated || authStore.isAdmin) {
+    notifiedBooks.value = [];
+    return;
+  }
+  try {
+    const res = await apiClient.get("/my-reservations");
+    notifiedBooks.value = res.data.data.filter(
+      (item) => item.status === "notified",
+    );
+  } catch (err) {
+    console.error("নোটিফিকেশন চেক এরর:", err);
+  }
+};
+
+onMounted(() => {
+  fetchUserNotifications();
+});
+
+watch(
+  () => authStore.isAuthenticated,
+  (loggedIn) => {
+    if (loggedIn) fetchUserNotifications();
+    else notifiedBooks.value = [];
+  },
+);
 
 const closeMenu = () => {
   isMobileMenuOpen.value = false;
@@ -21,6 +52,24 @@ const handleLogout = async () => {
 </script>
 
 <template>
+  <!-- যদি পাঠকের রিজার্ভ করা বই ফেরত এসে থাকে, তবে উপরে সবুজ অ্যালার্ট ব্যানার দেখাবে -->
+  <div
+    v-if="notifiedBooks.length > 0"
+    class="bg-emerald-600 text-white text-xs sm:text-sm py-2 px-4 text-center font-medium"
+  >
+    <span
+      >সুখবর! আপনার রিজার্ভ করা
+      <strong>"{{ notifiedBooks[0].book?.title }}"</strong> বইটি পাঠাগারে ফেরত
+      এসেছে।
+    </span>
+    <RouterLink
+      to="/my-borrows"
+      class="underline font-bold ml-1 hover:text-emerald-100"
+    >
+      এখনই সংগ্রহ করুন &rarr;
+    </RouterLink>
+  </div>
+
   <nav class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between h-16 items-center">
@@ -50,14 +99,37 @@ const handleLogout = async () => {
             >বইয়ের তালিকা</RouterLink
           >
 
-          <!-- Reader Link -->
-          <RouterLink
-            v-if="authStore.isAuthenticated && !authStore.isAdmin"
-            to="/my-borrows"
-            class="text-slate-600 hover:text-emerald-600 text-sm font-medium"
-          >
-            আমার বইসমূহ
-          </RouterLink>
+          <!-- Reader Link + Notification Bell -->
+          <template v-if="authStore.isAuthenticated && !authStore.isAdmin">
+            <RouterLink
+              to="/my-borrows"
+              class="text-slate-600 hover:text-emerald-600 text-sm font-medium flex items-center space-x-1"
+            >
+              <span>আমার বইসমূহ</span>
+              <span
+                v-if="notifiedBooks.length > 0"
+                class="bg-emerald-600 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full"
+              >
+                {{ notifiedBooks.length }}
+              </span>
+            </RouterLink>
+
+            <RouterLink
+              to="/my-borrows"
+              class="relative p-1.5 text-slate-600 hover:text-emerald-600"
+              title="নোটিফিকেশন"
+            >
+              <Bell class="w-5 h-5" />
+              <span
+                v-if="notifiedBooks.length > 0"
+                class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping"
+              ></span>
+              <span
+                v-if="notifiedBooks.length > 0"
+                class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full"
+              ></span>
+            </RouterLink>
+          </template>
 
           <!-- Admin Shortcut Button -->
           <RouterLink
@@ -99,7 +171,19 @@ const handleLogout = async () => {
         </div>
 
         <!-- Mobile Hamburger Button -->
-        <div class="flex items-center md:hidden">
+        <div class="flex items-center space-x-2 md:hidden">
+          <RouterLink
+            v-if="authStore.isAuthenticated && !authStore.isAdmin"
+            to="/my-borrows"
+            class="relative p-2 text-slate-600"
+          >
+            <Bell class="w-5 h-5" />
+            <span
+              v-if="notifiedBooks.length > 0"
+              class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full"
+            ></span>
+          </RouterLink>
+
           <button
             @click="isMobileMenuOpen = !isMobileMenuOpen"
             class="p-2 rounded-lg text-slate-600 hover:bg-slate-100 focus:outline-none"
@@ -155,6 +239,9 @@ const handleLogout = async () => {
         class="block text-slate-700 font-medium py-2"
       >
         আমার বইসমূহ
+        <span v-if="notifiedBooks.length > 0" class="text-emerald-600 font-bold"
+          >({{ notifiedBooks.length }}টি নতুন নোটিফিকেশন)</span
+        >
       </RouterLink>
 
       <RouterLink

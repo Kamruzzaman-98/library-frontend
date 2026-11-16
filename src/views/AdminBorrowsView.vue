@@ -156,7 +156,7 @@ const handleIssueFromReservation = async (reservationId) => {
         <table class="w-full text-left text-sm text-slate-600">
           <thead class="bg-slate-50 text-slate-700 text-xs uppercase">
             <tr>
-              <th class="py-3 px-4">পাঠক ও মেম্বার ID</th>
+              <th class="py-3 px-4">পাঠক ও ফোন</th>
               <th class="py-3 px-4">বই ও শেলফ</th>
               <th class="py-3 px-4">ডিউ ডেট</th>
               <th class="py-3 px-4">জরিমানা</th>
