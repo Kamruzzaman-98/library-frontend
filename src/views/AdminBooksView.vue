@@ -28,6 +28,24 @@ const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
 const editingBookId = ref(null);
 
+// Category Modal State
+const isCategoryAddModalOpen = ref(false);
+const isCategoryEditModalOpen = ref(false);
+const editingCategoryId = ref(null);
+
+const openAddCategoryModal = () => {
+  categoryForm.name = "";
+  categoryForm.description = "";
+
+  isCategoryAddModalOpen.value = true;
+};
+
+// Category Edit Form
+const editCategoryForm = reactive({
+  name: "",
+  description: "",
+});
+
 // ক্যাটাগরি ফর্ম
 const categoryForm = reactive({
   name: "",
@@ -213,17 +231,66 @@ const handleDeleteBook = async (id) => {
   }
 };
 
+// Category Edit Modal Open
+const openEditCategoryModal = (category) => {
+  editingCategoryId.value = category.id;
+
+  Object.assign(editCategoryForm, {
+    name: category.name,
+    description: category.description || "",
+  });
+
+  isCategoryEditModalOpen.value = true;
+};
+
 // ক্যাটাগরি সেভ
+
 const handleSaveCategory = async () => {
   submitting.value = true;
+
   try {
-    const response = await apiClient.post("/admin/categories", categoryForm);
+    const response = await apiClient.post("/categories", categoryForm);
+
     toast.success(response.data.message);
+
+    // Form Reset
     categoryForm.name = "";
     categoryForm.description = "";
+
+    // Add Modal Close
+    isCategoryAddModalOpen.value = false;
+
+    // Refresh Categories
     await fetchCategories();
   } catch (error) {
     toast.error(error.response?.data?.message || "ক্যাটাগরি যুক্ত করা যায়নি!");
+  } finally {
+    submitting.value = false;
+  }
+};
+
+// Category Update
+const handleUpdateCategory = async () => {
+  submitting.value = true;
+
+  try {
+    const res = await apiClient.post(
+      `/categories/${editingCategoryId.value}`,
+      editCategoryForm,
+    );
+
+    toast.success(res.data.message);
+
+    isCategoryEditModalOpen.value = false;
+
+    editCategoryForm.name = "";
+    editCategoryForm.description = "";
+
+    await Promise.all([fetchCategories(), fetchBooks(pagination.current_page)]);
+  } catch (error) {
+    toast.error(
+      error.response?.data?.message || "ক্যাটাগরি আপডেট ব্যর্থ হয়েছে!",
+    );
   } finally {
     submitting.value = false;
   }
@@ -238,7 +305,7 @@ const handleDeleteCategory = async (id) => {
   )
     return;
   try {
-    const res = await apiClient.delete(`/admin/categories/${id}`);
+    const res = await apiClient.delete(`/categories/${id}`);
     toast.success(res.data.message);
     await Promise.all([fetchCategories(), fetchBooks(1)]);
   } catch (error) {
@@ -469,55 +536,22 @@ const handleDeleteCategory = async (id) => {
     </div>
 
     <!-- ==================== ২. ক্যাটাগরি ম্যানেজমেন্ট ট্যাব ==================== -->
-    <div
-      v-if="activeTab === 'categories'"
-      class="grid grid-cols-1 lg:grid-cols-3 gap-6"
-    >
-      <div
-        class="bg-white p-6 rounded-xl border border-slate-200 shadow-2xs h-fit"
-      >
-        <h2 class="text-lg font-bold text-slate-800 mb-4">
-          নতুন ক্যাটাগরি যোগ করুন
-        </h2>
-        <form @submit.prevent="handleSaveCategory" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-slate-700"
-              >ক্যাটাগরির নাম *</label
-            >
-            <input
-              v-model="categoryForm.name"
-              type="text"
-              placeholder="যেমন: উপন্যাস, মুক্তিযুদ্ধ"
-              required
-              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700"
-              >বিবরণ</label
-            >
-            <textarea
-              v-model="categoryForm.description"
-              rows="3"
-              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
-            ></textarea>
-          </div>
-          <button
-            type="submit"
-            :disabled="submitting"
-            class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-lg text-sm transition"
-          >
-            {{ submitting ? "সংরক্ষণ হচ্ছে..." : "ক্যাটাগরি সেভ করুন" }}
-          </button>
-        </form>
-      </div>
+    <div v-if="activeTab === 'categories'" class="w-full">
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-2xs">
+        <div
+          class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-4"
+        >
+          <h2 class="text-lg font-bold text-slate-800">
+            বর্তমান ক্যাটাগরিসমূহ
+          </h2>
 
-      <div
-        class="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-2xs"
-      >
-        <h2 class="text-lg font-bold text-slate-800 mb-4">
-          বর্তমান ক্যাটাগরিসমূহ
-        </h2>
+          <button
+            @click="openAddCategoryModal"
+            class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition"
+          >
+            + নতুন ক্যাটাগরি যোগ করুন
+          </button>
+        </div>
         <div class="overflow-x-auto border border-slate-100 rounded-lg">
           <table class="w-full text-left text-sm text-slate-600">
             <thead class="bg-slate-50 text-slate-700 uppercase text-xs">
@@ -541,7 +575,17 @@ const handleDeleteCategory = async (id) => {
                   {{ cat.description || "---" }}
                 </td>
                 <td class="py-3 px-4 font-medium">{{ cat.books_count }} টি</td>
-                <td class="py-3 px-4 text-right">
+
+                <td class="py-3 px-4 text-right space-x-3">
+                  <!-- Edit Button -->
+                  <button
+                    @click="openEditCategoryModal(cat)"
+                    class="text-blue-600 hover:text-blue-800 font-semibold"
+                  >
+                    এডিট
+                  </button>
+
+                  <!-- Delete Button -->
                   <button
                     @click="handleDeleteCategory(cat.id)"
                     class="text-red-500 hover:text-red-700 font-semibold"
@@ -855,6 +899,174 @@ const handleDeleteCategory = async (id) => {
               class="px-5 py-2 text-sm text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 font-semibold transition"
             >
               {{ submitting ? "আপডেট হচ্ছে..." : "পরিবর্তন সেভ করুন" }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ==================== ৫. Edit Category Modal ==================== -->
+
+    <div
+      v-if="isCategoryEditModalOpen"
+      style="
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.6);
+        z-index: 60;
+      "
+      class="flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4"
+      >
+        <!-- Modal Header -->
+        <div
+          class="flex justify-between items-center border-b border-slate-100 pb-3"
+        >
+          <h3 class="text-lg font-bold text-slate-800">ক্যাটাগরি আপডেট করুন</h3>
+
+          <button
+            @click="isCategoryEditModalOpen = false"
+            class="text-slate-400 hover:text-slate-600 text-2xl leading-none"
+          >
+            &times;
+          </button>
+        </div>
+
+        <!-- Edit Category Form -->
+        <form @submit.prevent="handleUpdateCategory" class="space-y-4">
+          <!-- Category Name -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700">
+              ক্যাটাগরির নাম *
+            </label>
+
+            <input
+              v-model="editCategoryForm.name"
+              type="text"
+              required
+              placeholder="ক্যাটাগরির নাম লিখুন"
+              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+            />
+          </div>
+
+          <!-- Category Description -->
+          <div>
+            <label class="block text-sm font-medium text-slate-700">
+              ক্যাটাগরির বিবরণ
+            </label>
+
+            <textarea
+              v-model="editCategoryForm.description"
+              rows="3"
+              placeholder="ক্যাটাগরির বিবরণ লিখুন"
+              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+            ></textarea>
+          </div>
+
+          <!-- Modal Buttons -->
+          <div
+            class="flex justify-end space-x-2 pt-3 border-t border-slate-100"
+          >
+            <button
+              type="button"
+              @click="isCategoryEditModalOpen = false"
+              class="px-4 py-2 text-sm text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 font-medium"
+            >
+              বাতিল
+            </button>
+
+            <button
+              type="submit"
+              :disabled="submitting"
+              class="px-5 py-2 text-sm text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 font-semibold transition"
+            >
+              {{ submitting ? "আপডেট হচ্ছে..." : "পরিবর্তন সেভ করুন" }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ==================== ADD CATEGORY MODAL ==================== -->
+
+    <div
+      v-if="isCategoryAddModalOpen"
+      style="
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.6);
+        z-index: 60;
+      "
+      class="flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4"
+      >
+        <!-- Header -->
+        <div
+          class="flex justify-between items-center border-b border-slate-100 pb-3"
+        >
+          <h3 class="text-lg font-bold text-slate-800">
+            নতুন ক্যাটাগরি যোগ করুন
+          </h3>
+
+          <button
+            @click="isCategoryAddModalOpen = false"
+            class="text-slate-400 hover:text-slate-600 text-2xl"
+          >
+            &times;
+          </button>
+        </div>
+
+        <!-- Form -->
+        <form @submit.prevent="handleSaveCategory" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700">
+              ক্যাটাগরির নাম *
+            </label>
+
+            <input
+              v-model="categoryForm.name"
+              type="text"
+              required
+              placeholder="যেমন: উপন্যাস, মুক্তিযুদ্ধ"
+              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700">
+              বিবরণ
+            </label>
+
+            <textarea
+              v-model="categoryForm.description"
+              rows="3"
+              placeholder="ক্যাটাগরির বিবরণ লিখুন"
+              class="mt-1 w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+            ></textarea>
+          </div>
+
+          <!-- Buttons -->
+          <div
+            class="flex justify-end space-x-2 pt-3 border-t border-slate-100"
+          >
+            <button
+              type="button"
+              @click="isCategoryAddModalOpen = false"
+              class="px-4 py-2 text-sm text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 font-medium"
+            >
+              বাতিল
+            </button>
+
+            <button
+              type="submit"
+              :disabled="submitting"
+              class="px-5 py-2 text-sm text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 font-semibold transition"
+            >
+              {{ submitting ? "সংরক্ষণ হচ্ছে..." : "ক্যাটাগরি সেভ করুন" }}
             </button>
           </div>
         </form>
