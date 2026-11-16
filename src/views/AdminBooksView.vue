@@ -159,7 +159,7 @@ const handleSaveBook = async () => {
       formData.append("cover_image", coverImageFile.value);
     }
 
-    const response = await apiClient.post("/admin/books", formData, {
+    const response = await apiClient.post("/books", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
@@ -202,7 +202,7 @@ const handleUpdateBook = async () => {
     }
 
     const res = await apiClient.post(
-      `/admin/books/${editingBookId.value}`,
+      `/books/${editingBookId.value}`,
       formData,
       {
         headers: { "Content-Type": "multipart/form-data" },
@@ -223,7 +223,7 @@ const handleUpdateBook = async () => {
 const handleDeleteBook = async (id) => {
   if (!confirm("আপনি কি নিশ্চিত এই বইটি তালিকা থেকে মুছে ফেলতে চান?")) return;
   try {
-    const res = await apiClient.delete(`/admin/books/${id}`);
+    const res = await apiClient.delete(`/books/${id}`);
     toast.success(res.data.message);
     await Promise.all([fetchBooks(pagination.current_page), fetchCategories()]);
   } catch (error) {
