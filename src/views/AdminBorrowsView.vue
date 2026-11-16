@@ -40,7 +40,7 @@ onMounted(async () => {
 
 const handleIssue = async (id) => {
   try {
-    const res = await apiClient.post(`/borrows/${id}/issue`, {
+    const res = await apiClient.post(`/borrows/issue/${id}`, {
       days: 14,
     });
     toast.success(res.data.message);
@@ -53,7 +53,7 @@ const handleIssue = async (id) => {
 const handleReturn = async (id) => {
   if (!confirm("বইটি কি অক্ষত অবস্থায় ফেরত পাওয়া গেছে?")) return;
   try {
-    const res = await apiClient.post(`/borrows/${id}/return`);
+    const res = await apiClient.post(`/borrows/return/${id}`);
     toast.success(res.data.message);
     await Promise.all([fetchBorrows(), fetchReservations()]);
   } catch (error) {
@@ -64,7 +64,7 @@ const handleReturn = async (id) => {
 const handleReject = async (id) => {
   if (!confirm("আপনি কি এই আবেদনটি বাতিল করতে চান?")) return;
   try {
-    const res = await apiClient.post(`/borrows/${id}/reject`);
+    const res = await apiClient.post(`/borrows/reject/${id}`);
     toast.success(res.data.message);
     await fetchBorrows();
   } catch (error) {
@@ -74,7 +74,7 @@ const handleReject = async (id) => {
 
 const handleIssueFromReservation = async (reservationId) => {
   try {
-    const res = await apiClient.post(`/reservations/${reservationId}/issue`);
+    const res = await apiClient.post(`/reservations/issue/${reservationId}`);
     toast.success(res.data.message);
     await Promise.all([fetchBorrows(), fetchReservations()]);
   } catch (error) {

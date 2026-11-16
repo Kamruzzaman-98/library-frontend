@@ -48,11 +48,21 @@ const fetchData = async () => {
 const handleCancelReservation = async (id) => {
   if (!confirm("আপনি কি এই বইয়ের রিজার্ভেশন বাতিল করতে চান?")) return;
   try {
-    const res = await apiClient.post(`/reservations/${id}/cancel`);
+    const res = await apiClient.post(`/reservations/cancel/${id}`);
     toast.success(res.data.message);
     await fetchData();
   } catch (err) {
     toast.error("বাতিল করা যায়নি!");
+  }
+};
+
+const handleClaimReservedBook = async (bookId) => {
+  try {
+    const res = await apiClient.post("/borrow-request", { book_id: bookId });
+    toast.success(res.data.message);
+    await fetchData();
+  } catch (error) {
+    toast.error(error.response?.data?.message || "আবেদন সম্পন্ন করা যায়নি!");
   }
 };
 
@@ -187,7 +197,14 @@ onMounted(() => {
                 {{ res.status }}
               </span>
             </td>
-            <td class="py-3 px-4 text-right">
+            <td class="py-3 px-4 text-right space-x-3">
+              <button
+                v-if="res.status === 'notified'"
+                @click="handleClaimReservedBook(res.book_id)"
+                class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded text-xs font-semibold"
+              >
+                পড়ার আবেদন করুন
+              </button>
               <button
                 v-if="res.status === 'waiting' || res.status === 'notified'"
                 @click="handleCancelReservation(res.id)"
