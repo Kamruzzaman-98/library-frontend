@@ -3,6 +3,8 @@ import { ref, onMounted, watch } from "vue";
 import apiClient from "../api/axios";
 import { useAuthStore } from "../stores/auth";
 
+import { useToastStore } from "../stores/toast";
+
 //For image
 const storageUrl =
   import.meta.env.VITE_STORAGE_BASE_URL ||
@@ -15,6 +17,9 @@ const selectedCategory = ref("");
 const loading = ref(false);
 const authStore = useAuthStore();
 const requestingBookId = ref(null);
+
+const toast = useToastStore();
+const reservingBookId = ref(null);
 
 const fetchCategories = async () => {
   try {
@@ -55,6 +60,25 @@ const handleRequestBook = async (bookId) => {
     alert(error.response?.data?.message || "আবেদন সম্পন্ন করা যায়নি!");
   } finally {
     requestingBookId.value = null;
+  }
+};
+
+const handleReserveBook = async (bookId) => {
+  if (!authStore.isAuthenticated) {
+    toast.error("বই রিজার্ভ করতে প্রথমে লগইন করুন।");
+    return;
+  }
+
+  reservingBookId.value = bookId;
+  try {
+    const res = await apiClient.post("/reservations", { book_id: bookId });
+    toast.success(res.data.message);
+  } catch (error) {
+    toast.error(
+      error.response?.data?.message || "রিজার্ভেশন সম্পন্ন করা যায়নি!",
+    );
+  } finally {
+    reservingBookId.value = null;
   }
 };
 
@@ -167,6 +191,7 @@ onMounted(() => {
           </span>
           <span class="text-slate-400">মোট কপি: {{ book.total_copies }}</span>
         </div>
+
         <div class="p-3 bg-white border-t border-slate-100">
           <button
             v-if="book.available_copies > 0"
@@ -180,12 +205,18 @@ onMounted(() => {
                 : "পড়ার আবেদন করুন"
             }}
           </button>
+
           <button
             v-else
-            disabled
-            class="w-full bg-slate-200 text-slate-400 font-medium py-1.5 rounded-lg text-xs cursor-not-allowed"
+            @click="handleReserveBook(book.id)"
+            :disabled="reservingBookId === book.id"
+            class="w-full bg-amber-500 hover:bg-amber-600 text-white font-medium py-1.5 rounded-lg text-xs transition"
           >
-            বর্তমানে উপলব্ধ নেই
+            {{
+              reservingBookId === book.id
+                ? "রিজার্ভ হচ্ছে..."
+                : "রিজার্ভ করুন (Waitlist)"
+            }}
           </button>
         </div>
       </div>
