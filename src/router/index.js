@@ -18,9 +18,9 @@ import AdminBooksView from "../views/AdminBooksView.vue";
 import AdminBorrowsView from "../views/AdminBorrowsView.vue";
 import AdminNoticesView from "../views/AdminNoticeView.vue";
 import SettingsEditView from "../views/SettingsEditView.vue";
+import AdminCommunityView from "../views/AdminCommunityView.vue";
 
 const routes = [
-  // ১. পাবলিক ও সাধারণ পাঠক লেআউট
   {
     path: "/",
     component: PublicLayout,
@@ -53,6 +53,11 @@ const routes = [
       { path: "borrows", name: "admin-borrows", component: AdminBorrowsView },
       { path: "notices", name: "admin-notices", component: AdminNoticesView },
       { path: "settings", name: "settings-edit", component: SettingsEditView },
+      {
+        path: "community",
+        name: "admin-community",
+        component: AdminCommunityView,
+      },
     ],
   },
 ];
