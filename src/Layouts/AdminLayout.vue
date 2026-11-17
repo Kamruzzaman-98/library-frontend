@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "../stores/auth";
 import { useSettingStore } from "../stores/setting";
+import { HeartHandshake } from "lucide-vue-next";
 import {
   LayoutDashboard,
   BookOpen,
@@ -44,6 +45,7 @@ const menuItems = [
   { name: "বই ও ক্যাটাগরি", path: "/admin/books", icon: BookOpen },
   { name: "বিতরণ ও জমা ডেস্ক", path: "/admin/borrows", icon: ArrowLeftRight },
   { name: "নোটিশ বোর্ড", path: "/admin/notices", icon: Bell },
+  { name: "অনুদান ও কমিটি", path: "/admin/community", icon: HeartHandshake },
   { name: "পাঠাগার সেটিংস", path: "/admin/settings", icon: Settings },
 ];
 
