@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
-import { Bell } from "lucide-vue-next";
 import { useAuthStore } from "../stores/auth";
 import { useSettingStore } from "../stores/setting";
 import apiClient from "../api/axios";
@@ -52,10 +51,10 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <!-- যদি পাঠকের রিজার্ভ করা বই ফেরত এসে থাকে, তবে উপরে সবুজ অ্যালার্ট ব্যানার দেখাবে -->
+  <!-- ১. প্রফেশনাল টপ অ্যালার্ট ব্যানার (শুধুমাত্র বই ফেরত এলে দেখাবে) -->
   <div
     v-if="notifiedBooks.length > 0"
-    class="bg-emerald-600 text-white text-xs sm:text-sm py-2 px-4 text-center font-medium"
+    class="bg-emerald-600 text-white text-xs sm:text-sm py-2 px-4 text-center font-medium shadow-2xs"
   >
     <span
       >সুখবর! আপনার রিজার্ভ করা
@@ -70,7 +69,8 @@ const handleLogout = async () => {
     </RouterLink>
   </div>
 
-  <nav class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
+  <!-- ২. ক্লিন ও মিনিমাল নেভিগেশন বার -->
+  <nav class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-2xs">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between h-16 items-center">
         <!-- Logo -->
@@ -87,49 +87,33 @@ const handleLogout = async () => {
         </RouterLink>
 
         <!-- Desktop Menu -->
-        <div class="hidden md:flex items-center space-x-5">
+        <div class="hidden md:flex items-center space-x-6">
           <RouterLink
             to="/"
-            class="text-slate-600 hover:text-emerald-600 text-sm font-medium"
+            class="text-slate-600 hover:text-emerald-600 text-sm font-medium transition"
             >হোম</RouterLink
           >
           <RouterLink
             to="/books"
-            class="text-slate-600 hover:text-emerald-600 text-sm font-medium"
+            class="text-slate-600 hover:text-emerald-600 text-sm font-medium transition"
             >বইয়ের তালিকা</RouterLink
           >
 
-          <!-- Reader Link + Notification Bell -->
-          <template v-if="authStore.isAuthenticated && !authStore.isAdmin">
-            <RouterLink
-              to="/my-borrows"
-              class="text-slate-600 hover:text-emerald-600 text-sm font-medium flex items-center space-x-1"
+          <!-- Reader Link + Subtle Counter Badge -->
+          <RouterLink
+            v-if="authStore.isAuthenticated && !authStore.isAdmin"
+            to="/my-borrows"
+            class="text-slate-600 hover:text-emerald-600 text-sm font-medium flex items-center space-x-1.5 transition"
+          >
+            <span>আমার বইসমূহ</span>
+            <span
+              v-if="notifiedBooks.length > 0"
+              class="bg-emerald-600 text-white text-[11px] font-bold px-1.5 py-0.5 rounded-full leading-none"
+              title="রিজার্ভ করা বই ফেরত এসেছে"
             >
-              <span>আমার বইসমূহ</span>
-              <span
-                v-if="notifiedBooks.length > 0"
-                class="bg-emerald-600 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full"
-              >
-                {{ notifiedBooks.length }}
-              </span>
-            </RouterLink>
-
-            <RouterLink
-              to="/my-borrows"
-              class="relative p-1.5 text-slate-600 hover:text-emerald-600"
-              title="নোটিফিকেশন"
-            >
-              <Bell class="w-5 h-5" />
-              <span
-                v-if="notifiedBooks.length > 0"
-                class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping"
-              ></span>
-              <span
-                v-if="notifiedBooks.length > 0"
-                class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full"
-              ></span>
-            </RouterLink>
-          </template>
+              {{ notifiedBooks.length }}
+            </span>
+          </RouterLink>
 
           <!-- Admin Shortcut Button -->
           <RouterLink
@@ -143,7 +127,7 @@ const handleLogout = async () => {
           <!-- Auth Section -->
           <template v-if="authStore.isAuthenticated">
             <span
-              class="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full font-semibold"
+              class="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-full font-semibold"
             >
               {{ authStore.user?.name }}
             </span>
@@ -171,22 +155,10 @@ const handleLogout = async () => {
         </div>
 
         <!-- Mobile Hamburger Button -->
-        <div class="flex items-center space-x-2 md:hidden">
-          <RouterLink
-            v-if="authStore.isAuthenticated && !authStore.isAdmin"
-            to="/my-borrows"
-            class="relative p-2 text-slate-600"
-          >
-            <Bell class="w-5 h-5" />
-            <span
-              v-if="notifiedBooks.length > 0"
-              class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full"
-            ></span>
-          </RouterLink>
-
+        <div class="flex items-center md:hidden">
           <button
             @click="isMobileMenuOpen = !isMobileMenuOpen"
-            class="p-2 rounded-lg text-slate-600 hover:bg-slate-100 focus:outline-none"
+            class="p-2 rounded-lg text-slate-600 hover:bg-slate-100 focus:outline-none relative"
           >
             <svg
               class="h-6 w-6"
@@ -209,6 +181,10 @@ const handleLogout = async () => {
                 d="M6 18L18 6M6 6l12 12"
               />
             </svg>
+            <span
+              v-if="notifiedBooks.length > 0 && !isMobileMenuOpen"
+              class="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-600 rounded-full"
+            ></span>
           </button>
         </div>
       </div>
@@ -236,12 +212,15 @@ const handleLogout = async () => {
         v-if="authStore.isAuthenticated && !authStore.isAdmin"
         to="/my-borrows"
         @click="closeMenu"
-        class="block text-slate-700 font-medium py-2"
+        class="flex items-center justify-between text-slate-700 font-medium py-2"
       >
-        আমার বইসমূহ
-        <span v-if="notifiedBooks.length > 0" class="text-emerald-600 font-bold"
-          >({{ notifiedBooks.length }}টি নতুন নোটিফিকেশন)</span
+        <span>আমার বইসমূহ</span>
+        <span
+          v-if="notifiedBooks.length > 0"
+          class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-0.5 rounded-full"
         >
+          {{ notifiedBooks.length }} টি বই প্রস্তুত
+        </span>
       </RouterLink>
 
       <RouterLink
